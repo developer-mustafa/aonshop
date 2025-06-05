@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আপন শপ বিডি - অনলাইন শপিং</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Clerk Auth -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+    
+    <style>
+        .cart-count {
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        .smooth-transition {
+            transition: all 0.3s ease;
+        }
+        .hero-bg {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .admin-sidebar {
+            transition: all 0.3s ease;
+        }
+        .admin-main {
+            transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .admin-sidebar {
+                width: 250px;
+            }
+            .admin-main {
+                margin-left: 250px;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Clerk Auth Initialization -->
+    <script>
+        const frontendApi = 'pk_test_Z3JlYXQtbXVza294LTc5LmNsZXJrLmFjY291bnRzLmRldiQ'; // Replace with your Clerk Frontend API
+        const clerk = new Clerk(frontendApi);
+        
+        clerk.load().then(() => {
+            // Mount user button component if user is authenticated
+            if (clerk.user) {
+                mountUserButton();
+                checkAdminStatus();
+            }
+        });
+
+        function mountUserButton() {
+            clerk.mountUserButton('#user-button', {
+                appearance: {
+                    elements: {
+                        userButtonAvatarBox: 'w-8 h-8',
+                        userButtonTrigger: 'focus:outline-none'
+                    }
+                }
+            });
+        }
+
+        async function checkAdminStatus() {
+            // In a real app, you would check the user's role from your backend
+            const isAdmin = await clerk.user?.publicMetadata?.isAdmin || false;
+            if (isAdmin) {
+                document.getElementById('admin-dashboard-link').classList.remove('hidden');
+            }
+        }
+    </script>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="#" class="text-2xl font-bold text-green-600">আপন শপ বিডি</a>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-800 hover:text-green-600 smooth-transition">হোম</a>
+                    
+                    <div class="dropdown relative">
+                        <button class="text-gray-800 hover:text-green-600 smooth-transition flex items-center">
+                            পণ্য <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                        </button>
+                        <div class="dropdown-menu absolute hidden bg-white shadow-lg rounded-md mt-2 py-2 w-48">
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">ইলেকট্রনিক্স</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">ফ্যাশন</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">গৃহসজ্জা</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">স্বাস্থ্য ও সৌন্দর্য</a>
+                        </div>
+                    </div>
+                    
+                    <a href="#offers" class="text-gray-800 hover:text-green-600 smooth-transition">অফার</a>
+                    <a href="#about" class="text-gray-800 hover:text-green-600 smooth-transition">আমাদের সম্পর্কে</a>
+                    <a href="#contact" class="text-gray-800 hover:text-green-600 smooth-transition">যোগাযোগ</a>
+                    <a href="/admin" id="admin-dashboard-link" class="hidden text-gray-800 hover:text-green-600 smooth-transition">অ্যাডমিন</a>
+                    
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <input type="text" placeholder="পণ্য খুঁজুন..." class="border border-gray-300 rounded-full py-1 px-4 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-green-600">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- User and Cart -->
+                    <div class="flex items-center space-x-4">
+                        <a href="#" class="text-gray-800 hover:text-green-600 relative">
+                            <i class="fas fa-shopping-cart text-xl"></i>
+                            <span class="cart-count absolute bg-red-500 text-white rounded-full flex items-center justify-center">3</span>
+                        </a>
+                        <div id="user-button"></div>
+                        <div id="auth-buttons" class="hidden">
+                            <button onclick="clerk.openSignIn()" class="bg-green-600 text-white px-4 py-1 rounded-full text-sm hover:bg-green-700">লগ ইন</button>
+                            <button onclick="clerk.openSignUp()" class="ml-2 border border-green-600 text-green-600 px-4 py-1 rounded-full text-sm hover:bg-green-50">রেজিস্টার</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-800 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden bg-white py-4 px-2 shadow-lg rounded-lg mt-2">
+                <a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded">হোম</a>
+                <a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded">পণ্য</a>
+                <a href="#offers" class="block py-2 px-4 hover:bg-gray-100 rounded">অফার</a>
+                <a href="#about" class="block py-2 px-4 hover:bg-gray-100 rounded">আমাদের সম্পর্কে</a>
+                <a href="#contact" class="block py-2 px-4 hover:bg-gray-100 rounded">যোগাযোগ</a>
+                <a href="/admin" id="admin-dashboard-link-mobile" class="hidden block py-2 px-4 hover:bg-gray-100 rounded">অ্যাডমিন</a>
+                <div class="mt-2">
+                    <input type="text" placeholder="পণ্য খুঁজুন..." class="w-full border border-gray-300 rounded-full py-1 px-4 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                <div class="flex justify-between mt-4 px-4">
+                    <a href="#" class="text-gray-800 hover:text-green-600 relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="cart-count absolute bg-red-500 text-white rounded-full flex items-center justify-center">3</span>
+                    </a>
+                    <div id="user-button-mobile"></div>
+                    <div id="auth-buttons-mobile" class="hidden">
+                        <button onclick="clerk.openSignIn()" class="bg-green-600 text-white px-3 py-1 rounded-full text-xs hover:bg-green-700">লগ ইন</button>
+                        <button onclick="clerk.openSignUp()" class="ml-1 border border-green-600 text-green-600 px-3 py-1 rounded-full text-xs hover:bg-green-50">রেজিস্টার</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Hero Section -->
+        <section class="hero-bg text-white py-20 md:py-32">
+            <div class="container mx-auto px-4 text-center">
+                <h1 class="text-3xl md:text-5xl font-bold mb-4">গুণগত পণ্য, সেরা দামে</h1>
+                <p class="text-xl md:text-2xl mb-8">বাংলাদেশের বিশ্বস্ত অনলাইন শপিং প্ল্যাটফর্ম</p>
+                <div class="flex flex-col md:flex-row justify-center gap-4">
+                    <a href="#products" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-medium smooth-transition">পণ্য ব্রাউজ করুন</a>
+                    <a href="#offers" class="bg-white hover:bg-gray-100 text-green-600 px-8 py-3 rounded-full font-medium smooth-transition">স্পেশাল অফার</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rest of your existing content (Features, Categories, Products, Offers, Testimonials, About, Newsletter, Contact) -->
+        <!-- ... -->
+
+    </div>
+
+    <!-- Admin Dashboard (Hidden by default) -->
+    <div id="admin-dashboard" class="hidden min-h-screen bg-gray-100">
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="admin-sidebar fixed h-full bg-green-800 text-white shadow-lg">
+                <div class="p-4 border-b border-green-700">
+                    <h2 class="text-xl font-bold">অ্যাডমিন ড্যাশবোর্ড</h2>
+                </div>
+                <nav class="p-4">
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-tachometer-alt mr-2"></i> ড্যাশবোর্ড
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-box mr-2"></i> পণ্য ব্যবস্থাপনা
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-shopping-cart mr-2"></i> অর্ডার
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-users mr-2"></i> ব্যবহারকারী
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-tag mr-2"></i> ক্যাটাগরি
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-percentage mr-2"></i> অফার
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="block py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                                <i class="fas fa-cog mr-2"></i> সেটিংস
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-green-700">
+                    <button onclick="logout()" class="w-full py-2 px-4 rounded hover:bg-green-700 flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> লগ আউট
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="admin-main flex-1 p-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h1 class="text-2xl font-bold mb-6">ড্যাশবোর্ড সংক্ষিপ্তসার</h1>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-600">মোট বিক্রয়</p>
+                                    <h3 class="text-2xl font-bold">৳১,২৫,৪২০</h3>
+                                </div>
+                                <div class="bg-green-100 p-3 rounded-full">
+                                    <i class="fas fa-wallet text-green-600"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-green-600 mt-2"><i class="fas fa-arrow-up mr-1"></i> ১২% গত মাস থেকে</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-600">মোট অর্ডার</p>
+                                    <h3 class="text-2xl font-bold">১২৫</h3>
+                                </div>
+                                <div class="bg-blue-100 p-3 rounded-full">
+                                    <i class="fas fa-shopping-cart text-blue-600"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-blue-600 mt-2"><i class="fas fa-arrow-up mr-1"></i> ৮% গত মাস থেকে</p>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-600">মোট পণ্য</p>
+                                    <h3 class="text-2xl font-bold">২৪৫</h3>
+                                </div>
+                                <div class="bg-purple-100 p-3 rounded-full">
+                                    <i class="fas fa-box text-purple-600"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-purple-600 mt-2"><i class="fas fa-plus mr-1"></i> ১৫ টি নতুন</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-gray-600">মোট গ্রাহক</p>
+                                    <h3 class="text-2xl font-bold">৫৬২</h3>
+                                </div>
+                                <div class="bg-yellow-100 p-3 rounded-full">
+                                    <i class="fas fa-users text-yellow-600"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-yellow-600 mt-2"><i class="fas fa-arrow-up mr-1"></i> ২৩% গত মাস থেকে</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Orders -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4">সাম্প্রতিক অর্ডার</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">অর্ডার আইডি</th>
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">গ্রাহক</th>
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">তারিখ</th>
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">পরিমাণ</th>
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">স্ট্যাটাস</th>
+                                        <th class="py-2 px-4 border-b border-gray-200 text-left">অ্যাকশন</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-2 px-4 border-b border-gray-200">#ORD-2023-125</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">রাকিবুল হাসান</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">১০ জুন, ২০২৩</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">৳১২,৯৯৯</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">ডেলিভার্ড</span>
+                                        </td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-2 px-4 border-b border-gray-200">#ORD-2023-124</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">ফারহানা ইসলাম</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">৯ জুন, ২০২৩</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">৳৮,৫০০</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">প্রসেসিং</span>
+                                        </td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-2 px-4 border-b border-gray-200">#ORD-2023-123</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">তাসনিমা আক্তার</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">৮ জুন, ২০২৩</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">৳১৫,২৫০</td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">শিপড</span>
+                                        </td>
+                                        <td class="py-2 px-4 border-b border-gray-200">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Management -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold">পণ্য ব্যবস্থাপনা</h2>
+                            <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                <i class="fas fa-plus mr-1"></i> নতুন পণ্য যোগ করুন
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Product Card 1 -->
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                <img src="https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Product" class="w-full h-40 object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-semibold">স্যামসাং গ্যালাক্সি এম২০</h3>
+                                    <p class="text-gray-600 text-sm mb-2">৳১৮,৯৯৯</p>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">স্টকে আছে</span>
+                                        <div class="space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Product Card 2 -->
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Product" class="w-full h-40 object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-semibold">ওয়ালটন প্রাইমাম</h3>
+                                    <p class="text-gray-600 text-sm mb-2">৳১৫,৫০০</p>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">স্টকে আছে</span>
+                                        <div class="space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Product Card 3 -->
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Product" class="w-full h-40 object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-semibold">স্মার্ট ওয়াচ এক্স৫</h3>
+                                    <p class="text-gray-600 text-sm mb-2">৳২,৯৯৯</p>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm bg-red-100 text-red-800 px-2 py-1 rounded">স্টক শেষ</span>
+                                        <div class="space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="md:flex md:justify-between">
+                <div class="mb-8 md:mb-0">
+                    <h3 class="text-xl font-bold mb-4">আপন শপ বিডি</h3>
+                    <p class="max-w-xs text-gray-400">বাংলাদেশের বিশ্বস্ত অনলাইন শপিং প্ল্যাটফর্ম। গুণগত পণ্য, সেরা দামে।</p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="font-semibold mb-4">লিংক</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">হোম</a></li>
+                            <li><a href="#products" class="text-gray-400 hover:text-white">পণ্য</a></li>
+                            <li><a href="#offers" class="text-gray-400 hover:text-white">অফার</a></li>
+                            <li><a href="#about" class="text-gray-400 hover:text-white">আমাদের সম্পর্কে</a></li>
+                            <li><a href="#contact" class="text-gray-400 hover:text-white">যোগাযোগ</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-4">সেবা</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">আমার অ্যাকাউন্ট</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">অর্ডার ট্র্যাক</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">রিটার্ন পলিসি</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">প্রাইভেসি পলিসি</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">শর্তাবলী</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-4">পেমেন্ট মেথড</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <img src="https://via.placeholder.com/40" alt="bKash" class="w-10 h-6 bg-white rounded">
+                            <img src="https://via.placeholder.com/40" alt="Nagad" class="w-10 h-6 bg-white rounded">
+                            <img src="https://via.placeholder.com/40" alt="Rocket" class="w-10 h-6 bg-white rounded">
+                            <img src="https://via.placeholder.com/40" alt="Visa" class="w-10 h-6 bg-white rounded">
+                            <img src="https://via.placeholder.com/40" alt="Mastercard" class="w-10 h-6 bg-white rounded">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400 text-sm">
+                <p>© ২০২৫ আপন শপ বিডি। সর্বস্বত্ব সংরক্ষিত।</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Check if current page is admin dashboard
+        function checkAdminPage() {
+            if (window.location.pathname === '/admin') {
+                // In a real app, you would verify admin status from backend
+                const isAdmin = true; // Temporary for demo
+                if (isAdmin) {
+                    document.getElementById('main-content').classList.add('hidden');
+                    document.getElementById('admin-dashboard').classList.remove('hidden');
+                } else {
+                    window.location.href = '/';
+                }
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await clerk.signOut();
+                window.location.href = '/';
+            } catch (err) {
+                console.error('Error signing out:', err);
+            }
+        }
+
+        // Initialize auth buttons visibility
+        function initAuthButtons() {
+            const authButtons = document.getElementById('auth-buttons');
+            const authButtonsMobile = document.getElementById('auth-buttons-mobile');
+            
+            if (clerk.user) {
+                authButtons.classList.add('hidden');
+                authButtonsMobile.classList.add('hidden');
+            } else {
+                authButtons.classList.remove('hidden');
+                authButtonsMobile.classList.remove('hidden');
+            }
+        }
+
+        // Clerk loaded callback
+        clerk.addListener(({ user }) => {
+            initAuthButtons();
+            if (user) {
+                checkAdminStatus();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminPage();
+            initAuthButtons();
+        });
+    </script>
+</body>
+</html>
